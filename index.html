@@ -1,0 +1,1170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Starkeys</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;600&family=Atkinson+Hyperlegible:wght@400;700&family=Chakra+Petch:wght@500;700&display=swap">
+<style>
+/* Layout: one mission console — pilot header, today's mission, road-to-goal chart, mission map. A session swaps in a cockpit: typing tape (or meteor canvas) above a finger-coloured keyboard. Deliberately single dark theme (night sky). */
+:root{
+  color-scheme: dark;
+  --space:#0e1330; --deep:#0a0e26; --panel:#171f45; --panel-2:#212a5a; --line:#2e3872;
+  --ink:#eef1ff; --ink-dim:#a3abd6; --ink-faint:#6c76a8;
+  --amber:#ffb547; --amber-ink:#2a1a00; --cyan:#62d9ff; --good:#5ee3a1; --bad:#ff6b7a;
+  --veil:rgba(10,14,38,.88); --star:rgba(255,255,255,.55);
+  --f-lp:#c79bff; --f-lr:#7fb0ff; --f-lm:#5fd9c8; --f-li:#9be36f;
+  --f-ri:#ffd56b; --f-rm:#ffa66b; --f-rr:#ff8aa6; --f-rp:#e59bff; --f-th:#aab2d9;
+  --display:'Chakra Petch','Trebuchet MS',system-ui,sans-serif;
+  --body:'Atkinson Hyperlegible',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'Atkinson Hyperlegible Mono',ui-monospace,'Cascadia Mono',Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{min-height:100%}
+body{
+  margin:0;background-color:var(--space);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;
+  background-image:
+    radial-gradient(ellipse at 50% -10%, #28316e 0%, transparent 55%),
+    radial-gradient(1.3px 1.3px at 13px 27px, var(--star) 99%, transparent),
+    radial-gradient(1px 1px at 97px 141px, var(--star) 99%, transparent),
+    radial-gradient(1.5px 1.5px at 181px 73px, rgba(255,214,140,.6) 99%, transparent),
+    radial-gradient(1px 1px at 213px 199px, var(--star) 99%, transparent),
+    radial-gradient(1px 1px at 61px 211px, var(--star) 99%, transparent);
+  background-size:100% 700px,240px 240px,240px 240px,240px 240px,240px 240px,240px 240px;
+  background-repeat:no-repeat,repeat,repeat,repeat,repeat,repeat;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.15}
+.app{max-width:1000px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 56px;display:flex;flex-direction:column;gap:20px}
+.eyebrow{font-family:var(--display);font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-dim)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
+.panel h2{font-size:1.15rem;margin-bottom:12px}
+
+/* header */
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:16px 24px}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;font-size:1.5rem;letter-spacing:.12em;text-transform:uppercase;margin-right:auto}
+.brand svg{width:34px;height:34px}
+.pilot{display:flex;flex-direction:column;gap:4px;min-width:180px}
+.pilot .rank{font-family:var(--display);font-weight:700;color:var(--amber)}
+.xpbar{height:8px;border-radius:99px;background:var(--panel-2);overflow:hidden}
+.xpbar i{display:block;height:100%;background:linear-gradient(90deg,var(--amber),#ffd88f);border-radius:99px;width:0}
+.xptext{font-size:.8rem;color:var(--ink-dim);font-variant-numeric:tabular-nums}
+.streak{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:99px;padding:6px 14px 6px 10px;font-weight:700;font-variant-numeric:tabular-nums}
+.streak svg{width:20px;height:20px}
+
+/* hero */
+.hero{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:24px;padding:26px;background:linear-gradient(140deg,var(--panel-2),var(--panel) 60%);border:1px solid var(--line);border-radius:18px}
+.hero h1{font-size:clamp(1.6rem,4vw,2.4rem);margin:6px 0 10px}
+.hero .tip{color:var(--ink-dim);max-width:52ch;margin:0 0 16px}
+.caps{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+.cap{font-family:var(--mono);font-weight:600;font-size:1.25rem;min-width:46px;height:46px;padding:0 10px;display:inline-grid;place-items:center;border-radius:9px;background:var(--deep);border:1px solid var(--line);border-bottom:4px solid var(--fc,var(--line))}
+.plan{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;counter-reset:s}
+.plan li{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:10px;padding:10px 12px;background:rgba(10,14,38,.45);border-radius:10px}
+.plan li::before{counter-increment:s;content:counter(s);font-family:var(--display);font-weight:700;color:var(--amber);text-align:center}
+.plan .min{font-family:var(--mono);color:var(--ink-dim);font-size:.9rem}
+.plan .sub{display:block;font-size:.82rem;color:var(--ink-dim)}
+.btn{appearance:none;border:0;cursor:pointer;font-family:var(--display);font-weight:700;letter-spacing:.08em;text-transform:uppercase;border-radius:12px;padding:14px 26px;background:var(--amber);color:var(--amber-ink);font-size:1.05rem;box-shadow:0 4px 0 #b9761c;transition:transform .08s}
+.btn:active{transform:translateY(2px);box-shadow:0 2px 0 #b9761c}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);box-shadow:none}
+.btn.small{padding:9px 14px;font-size:.82rem}
+.done-note{display:flex;gap:12px;align-items:flex-start;background:rgba(94,227,161,.1);border:1px solid rgba(94,227,161,.35);border-radius:12px;padding:14px 16px;max-width:52ch}
+.done-note svg{flex:none;width:24px;height:24px;margin-top:2px}
+
+/* goal + weak keys */
+.grid2{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:20px}
+.goalhead{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:700;padding:4px 10px;border-radius:99px;background:var(--panel-2);color:var(--ink-dim)}
+.chip.good{background:rgba(94,227,161,.15);color:var(--good)}
+.chip.warn{background:rgba(255,181,71,.15);color:var(--amber)}
+.chip.info{background:rgba(98,217,255,.13);color:var(--cyan)}
+.chart{width:100%;height:auto;display:block}
+.chart text{font-family:var(--mono);font-size:11px;fill:var(--ink-faint)}
+.nums{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
+.num b{display:block;font-family:var(--display);font-size:1.6rem;font-variant-numeric:tabular-nums}
+.num span{font-size:.8rem;color:var(--ink-dim)}
+.weaklist{display:flex;flex-wrap:wrap;gap:10px;margin:4px 0 12px}
+.weak .cap{font-size:1.1rem}
+.weak p{color:var(--ink-dim);margin:0;font-size:.92rem}
+.legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 12px;font-size:.82rem;color:var(--ink-dim);margin-top:14px}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:3px;background:var(--fc)}
+
+/* map */
+.map{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.map li{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.map .n{font-family:var(--display);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint)}
+.map .t{font-weight:700;font-size:.92rem}
+.map .k{font-family:var(--mono);font-size:.85rem;color:var(--ink-dim)}
+.map li.done{background:rgba(94,227,161,.07);border-color:rgba(94,227,161,.35)}
+.map li.done .n{color:var(--good)}
+.map li.cur{background:rgba(255,181,71,.1);border-color:var(--amber)}
+.map li.cur .n{color:var(--amber)}
+.map li.locked{opacity:.45}
+.phase-label{grid-column:1/-1;font-family:var(--display);font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-dim);margin-top:6px}
+
+/* parent corner */
+details.parent summary{cursor:pointer;font-family:var(--display);font-weight:700;font-size:1.05rem;list-style:none;display:flex;justify-content:space-between;align-items:center}
+details.parent summary::after{content:'+';font-size:1.4rem;color:var(--ink-dim)}
+details.parent[open] summary::after{content:'–'}
+.pgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin-top:16px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-weight:700;font-size:.9rem}
+.field .hint{font-size:.82rem;color:var(--ink-dim)}
+.field input,.field select,.field textarea{background:var(--deep);border:1px solid var(--line);border-radius:8px;padding:9px 10px}
+.field textarea{min-height:70px;font-family:var(--mono);font-size:.75rem;resize:vertical}
+.row-btns{display:flex;flex-wrap:wrap;gap:8px}
+.how{color:var(--ink-dim);font-size:.92rem;max-width:68ch}
+.how ul{padding-left:20px;margin:8px 0 0}
+.how li{margin-bottom:4px}
+.note{font-size:.82rem;color:var(--good);min-height:1.2em}
+
+/* session */
+.sbar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:16px 20px;align-items:center}
+.sbar .mname{font-family:var(--display);font-weight:700;font-size:1.05rem;line-height:1.2}
+.sbar .mname small{display:block;font-family:var(--body);font-weight:400;font-size:.8rem;color:var(--ink-dim)}
+.steps{display:grid;grid-template-columns:1fr 2fr 3fr 4fr;gap:6px}
+.seg{display:flex;flex-direction:column;gap:4px;min-width:0}
+.seg span{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--display)}
+.seg.on span{color:var(--amber)}
+.seg.past span{color:var(--good)}
+.seg div{height:6px;background:var(--panel-2);border-radius:99px;overflow:hidden}
+.seg i{display:block;height:100%;width:0;background:var(--amber)}
+.seg.past i{background:var(--good)}
+.clockbox{display:flex;align-items:center;gap:12px}
+.clock{font-family:var(--mono);font-weight:600;font-size:1.8rem;font-variant-numeric:tabular-nums;line-height:1}
+.clock small{display:block;font-size:.7rem;font-weight:400;color:var(--ink-dim);letter-spacing:.05em;margin-top:4px;font-family:var(--body)}
+.stage{position:relative;background:var(--deep);border:1px solid var(--line);border-radius:16px;overflow:hidden;min-height:250px}
+.tape{padding:34px 30px 26px;display:flex;flex-direction:column;gap:14px;min-height:250px;justify-content:center}
+#tapeLine{font-family:var(--mono);font-size:clamp(1.25rem,3.1vw,2rem);line-height:1.6;white-space:pre-wrap;letter-spacing:.02em}
+#tapeLine span.d{color:var(--good);opacity:.75}
+#tapeLine span.t{color:var(--ink)}
+#tapeLine span.c{background:rgba(255,181,71,.22);color:var(--amber);border-radius:4px;box-shadow:inset 0 -3px 0 var(--amber)}
+#tapeLine span.c.bad{background:rgba(255,107,122,.28);color:var(--bad);box-shadow:inset 0 -3px 0 var(--bad)}
+#tapeNext{font-family:var(--mono);font-size:clamp(1rem,2.2vw,1.35rem);color:var(--ink-faint);white-space:pre-wrap}
+.shake{animation:shake .18s}
+@keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+#game{display:block;width:100%;height:380px}
+.hud{position:absolute;top:10px;left:12px;right:12px;display:flex;justify-content:space-between;gap:12px;pointer-events:none;font-family:var(--display);font-weight:700;font-variant-numeric:tabular-nums;font-size:.95rem}
+.hud .sh{color:var(--cyan)}
+.overlay{position:absolute;inset:0;background:var(--veil);display:flex;align-items:center;justify-content:center;padding:20px;z-index:2}
+.ocard{max-width:560px;display:flex;flex-direction:column;gap:12px;align-items:flex-start}
+.ocard h2{font-size:clamp(1.4rem,3.4vw,2rem)}
+.ocard p{margin:0;color:var(--ink-dim)}
+.ocard .key-hint{font-size:.85rem;color:var(--ink-faint)}
+.ostats{display:flex;flex-wrap:wrap;gap:24px}
+.ostats b{display:block;font-family:var(--display);font-size:2rem;font-variant-numeric:tabular-nums;color:var(--ink)}
+.ostats span{font-size:.8rem;color:var(--ink-dim)}
+.live{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:24px;align-items:center}
+.live .stat b{font-family:var(--display);font-size:1.4rem;font-variant-numeric:tabular-nums;margin-right:4px}
+.live .stat span{font-size:.82rem;color:var(--ink-dim)}
+.race{display:flex;flex-direction:column;gap:4px;min-width:0}
+.race .track{position:relative;height:12px;background:var(--panel-2);border-radius:99px}
+.race .you,.race .pace{position:absolute;top:50%;width:16px;height:16px;border-radius:50%;transform:translate(-50%,-50%)}
+.race .you{background:var(--amber);box-shadow:0 0 10px var(--amber);z-index:1}
+.race .pace{background:transparent;border:2px dashed var(--cyan)}
+.race small{font-size:.78rem;color:var(--ink-dim)}
+.finger{text-align:center;font-size:.95rem;color:var(--ink-dim);min-height:1.5em}
+.finger b{color:var(--fc,var(--ink))}
+.capswarn{color:var(--bad);font-weight:700;text-align:center}
+
+/* keyboard */
+.kbd{display:flex;flex-direction:column;gap:6px;align-items:center;user-select:none;transition:opacity .2s}
+.krow{display:flex;gap:6px;width:100%;justify-content:center}
+.key{flex:0 1 52px;height:48px;border-radius:8px;background:var(--panel);border:1px solid var(--line);border-bottom:4px solid var(--fc);display:grid;place-items:center;font-family:var(--mono);font-weight:600;font-size:1rem;color:var(--ink);position:relative;transition:transform .08s,opacity .2s,background .08s}
+.key.wide{flex-basis:84px;font-size:.72rem;font-family:var(--display);letter-spacing:.06em;text-transform:uppercase}
+.key.space{flex-basis:330px}
+.key.bump::after{content:'';position:absolute;bottom:7px;width:12px;height:2px;border-radius:2px;background:var(--ink-dim)}
+.key.locked{opacity:.28;border-bottom-color:var(--line)}
+.key.next{background:var(--fc);color:var(--deep);transform:translateY(-3px);box-shadow:0 0 16px var(--fc);opacity:1}
+.kbd.ghost .key:not(.next){opacity:.16}
+.kbd.ghost .key.locked:not(.next){opacity:.07}
+.f-lp{--fc:var(--f-lp)}.f-lr{--fc:var(--f-lr)}.f-lm{--fc:var(--f-lm)}.f-li{--fc:var(--f-li)}
+.f-ri{--fc:var(--f-ri)}.f-rm{--fc:var(--f-rm)}.f-rr{--fc:var(--f-rr)}.f-rp{--fc:var(--f-rp)}.f-th{--fc:var(--f-th)}
+
+/* summary */
+.summary{display:flex;flex-direction:column;gap:20px}
+.summary h1{font-size:clamp(1.8rem,5vw,2.8rem)}
+.summary .lead{font-size:1.1rem;color:var(--ink-dim);max-width:60ch;margin:0}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.tile b{display:block;font-family:var(--display);font-size:2rem;font-variant-numeric:tabular-nums}
+.tile span{font-size:.82rem;color:var(--ink-dim)}
+.banner{border-radius:14px;padding:18px 20px;border:1px solid}
+.banner.good{background:rgba(94,227,161,.1);border-color:rgba(94,227,161,.4)}
+.banner.warn{background:rgba(255,181,71,.1);border-color:rgba(255,181,71,.4)}
+.banner h2{font-size:1.2rem;margin-bottom:4px}
+.banner p{margin:0;color:var(--ink-dim)}
+
+@media (max-width:760px){
+  .hero,.grid2,.pgrid{grid-template-columns:minmax(0,1fr)}
+  .sbar{grid-template-columns:minmax(0,1fr) auto}
+  .steps{grid-column:1/-1;grid-row:2}
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .live{grid-template-columns:auto auto;gap:12px 24px}
+  .race{grid-column:1/-1}
+  .key{height:38px;font-size:.85rem;border-radius:6px}
+  .krow,.kbd{gap:4px}
+  .key.wide{flex-basis:56px;font-size:.6rem}
+  #game{height:320px}
+  .tape{padding:24px 18px}
+}
+@media (prefers-reduced-motion:reduce){
+  .shake{animation:none}
+  .key,.btn{transition:none}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="top" id="topbar">
+    <div class="brand">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><rect x="3" y="9" width="34" height="26" rx="6" fill="#212a5a" stroke="#2e3872"/><rect x="8" y="14" width="7" height="7" rx="2" fill="#9be36f"/><rect x="17" y="14" width="7" height="7" rx="2" fill="#ffd56b"/><rect x="26" y="14" width="7" height="7" rx="2" fill="#7fb0ff"/><rect x="11" y="24" width="18" height="6" rx="2" fill="#aab2d9"/><path d="M31 2l1.6 3.4L36 7l-3.4 1.6L31 12l-1.6-3.4L26 7l3.4-1.6z" fill="#ffb547"/></svg>
+      Starkeys
+    </div>
+    <div class="pilot">
+      <div class="rank" id="rank">Cadet</div>
+      <div class="xpbar"><i id="xpfill"></i></div>
+      <div class="xptext" id="xptext">0 XP</div>
+    </div>
+    <div class="streak" id="streak" title="Days in a row with a finished mission">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5 0 2 1 3 2 3-1-3 0-7 1-9.5z" fill="#ffb547"/><path d="M12 13c.6 1.4 2 2 2 3.6a2 2 0 0 1-4 0c0-1 .6-1.8 1-2.2.2.6.6 1 1 1-.2-.8-.2-1.6 0-2.4z" fill="#fff2d6"/></svg>
+      <span id="streakN">0 day streak</span>
+    </div>
+  </header>
+
+  <!-- HOME -->
+  <main id="home" class="app" style="padding:0">
+    <section class="hero">
+      <div>
+        <div class="eyebrow" id="hEyebrow">Today's mission · 10 minutes</div>
+        <h1 id="hTitle">Mission 1 · Home Base</h1>
+        <div class="caps" id="hCaps"></div>
+        <p class="tip" id="hTip"></p>
+        <div id="hAction"></div>
+      </div>
+      <ol class="plan" id="hPlan"></ol>
+    </section>
+
+    <section class="grid2">
+      <div class="panel">
+        <div class="goalhead">
+          <h2 id="goalTitle">Road to 35 WPM</h2>
+          <span class="chip" id="goalChip">First mission today</span>
+        </div>
+        <svg class="chart" id="chart" viewBox="0 0 640 220" role="img" aria-label="Typing speed over time compared with the goal"></svg>
+        <div class="nums">
+          <div class="num"><b id="nLatest">–</b><span>Latest speed (WPM)</span></div>
+          <div class="num"><b id="nBest">–</b><span>Best speed (WPM)</span></div>
+          <div class="num"><b id="nAcc">–</b><span>Accuracy, last 5</span></div>
+        </div>
+      </div>
+      <div class="panel weak">
+        <h2>Keys to watch</h2>
+        <div class="weaklist" id="weakList"></div>
+        <p id="weakNote">Starkeys tracks every key you miss. Your trickiest keys show up in warm-ups more often.</p>
+        <div class="legend" id="legend"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Mission map</h2>
+      <ol class="map" id="map"></ol>
+    </section>
+
+    <details class="panel parent" id="parent">
+      <summary>Parent corner</summary>
+      <div class="pgrid">
+        <div class="how">
+          <strong>How Starkeys teaches</strong>
+          <ul>
+            <li>One 10-minute session a day: warm-up, new keys, a scored typing round, then a game. Short daily practice beats long weekly sessions.</li>
+            <li>Keys arrive two at a time, starting on the home row (F and J bumps), with every finger colour-coded.</li>
+            <li>Accuracy first: a mission unlocks the next one at 90% accuracy. After all keys are learned, Speed Run missions require 15, 20, 25, 30, 35 and 40 WPM at 92% accuracy.</li>
+            <li>From mission 7 the on-screen keyboard fades, and only lights up if your child hesitates. This builds the habit of not looking down.</li>
+            <li>Progress is saved in this browser on this device. Use the progress code below as a backup.</li>
+          </ul>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="field">
+            <label for="goalDate">Goal date for 32–40 WPM</label>
+            <input type="date" id="goalDate">
+            <span class="hint">The chart's target path ends here.</span>
+          </div>
+          <div class="field">
+            <label for="startMission">Current mission</label>
+            <select id="startMission"></select>
+            <span class="hint">Skip ahead if your child already knows some keys, or step back to repeat.</span>
+          </div>
+          <div class="field">
+            <label>Daily limit</label>
+            <div class="row-btns"><button class="btn ghost small" id="extraBtn" type="button">Allow one more session today</button></div>
+          </div>
+          <div class="field">
+            <label for="backup">Progress code</label>
+            <textarea id="backup" spellcheck="false" placeholder="Copy this code somewhere safe, or paste a code here to restore."></textarea>
+            <div class="row-btns">
+              <button class="btn ghost small" id="copyBtn" type="button">Copy progress code</button>
+              <button class="btn ghost small" id="loadBtn" type="button">Restore from code</button>
+              <button class="btn ghost small" id="resetBtn" type="button">Reset all progress</button>
+            </div>
+            <div class="note" id="pnote"></div>
+          </div>
+        </div>
+      </div>
+    </details>
+  </main>
+
+  <!-- SESSION -->
+  <main id="session" class="app" style="padding:0" hidden>
+    <div class="sbar">
+      <div class="mname" id="sName">Mission 1<small>Home Base</small></div>
+      <div class="steps" id="steps"></div>
+      <div class="clockbox">
+        <div class="clock" id="clock">1:00<small id="clockTotal">10:00 left today</small></div>
+        <button class="btn ghost small" id="pauseBtn" type="button">Pause</button>
+      </div>
+    </div>
+    <div class="stage" id="stage">
+      <div class="tape" id="tapeWrap"><div id="tapeLine"></div><div id="tapeNext"></div></div>
+      <div id="gameWrap" hidden>
+        <canvas id="game"></canvas>
+        <div class="hud"><span id="hudScore">Score 0</span><span id="hudCombo">Combo ×1</span><span class="sh" id="hudShield">Shields ●●●</span></div>
+      </div>
+      <div class="overlay" id="overlay"><div class="ocard" id="ocard"></div></div>
+    </div>
+    <div class="live" id="live">
+      <div class="stat"><b id="lWpm">0</b><span>WPM</span></div>
+      <div class="stat"><b id="lAcc">100%</b><span>accuracy</span></div>
+      <div class="race" id="race" hidden>
+        <div class="track"><div class="pace" id="rPace"></div><div class="you" id="rYou"></div></div>
+        <small id="rText">Stay ahead of the dashed ring to beat goal pace.</small>
+      </div>
+    </div>
+    <div class="capswarn" id="capsWarn" hidden>Caps Lock is on. Press Alt + Search on a Chromebook to turn it off.</div>
+    <div class="kbd" id="kbd"></div>
+    <div class="finger" id="finger"></div>
+  </main>
+
+  <!-- SUMMARY -->
+  <main id="summary" class="app summary" style="padding:0" hidden></main>
+</div>
+
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+const rand = n => Math.floor(Math.random() * n);
+const pick = a => a[rand(a.length)];
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+const today = () => iso(new Date());
+const dayDiff = (a, b) => Math.round((new Date(b + 'T12:00') - new Date(a + 'T12:00')) / 864e5);
+const addDays = (a, n) => { const d = new Date(a + 'T12:00'); d.setDate(d.getDate() + n); return iso(d); };
+const fmtDate = d => new Date(d + 'T12:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+
+/* ---------------- curriculum ---------------- */
+const LESSONS = [
+  { title: 'Home Base', keys: 'fj', tip: 'Find the little bumps on F and J. Your index fingers live there, and your thumbs rest on the space bar.' },
+  { title: 'Middle Fingers', keys: 'dk', tip: 'D and K sit right next to your index fingers. Keep your fingers curved, like you are holding a ball.' },
+  { title: 'Ring Fingers', keys: 'sl', tip: 'S and L belong to your ring fingers. Only the finger that types should move.' },
+  { title: 'Pinky Power', keys: 'a;', tip: 'Pinkies go on A and the semicolon. All eight fingers now sit on the home row.' },
+  { title: 'The Stretch', keys: 'gh', tip: 'Slide your index fingers sideways for G and H, then snap straight back home.' },
+  { title: 'Up to E and I', keys: 'ei', tip: 'Middle fingers reach up for E and I. Return home after every reach.' },
+  { title: 'R and U', keys: 'ru', tip: 'Index fingers reach up and a little to the left for R and U.' },
+  { title: 'T and O', keys: 'to', tip: 'T is a long reach for your left index finger. O belongs to your right ring finger.' },
+  { title: 'C and N', keys: 'cn', tip: 'Your left middle finger curls down for C. Your right index finger drops down for N.' },
+  { title: 'W and M', keys: 'wm', tip: 'Left ring finger reaches up for W. Right index finger curls down for M.' },
+  { title: 'V and B', keys: 'vb', tip: 'Both belong to your left index finger. B is a long reach, so never sneak your right hand over.' },
+  { title: 'Y and P', keys: 'yp', tip: 'Right index finger reaches up and left for Y. Right pinky reaches up for P.' },
+  { title: 'Rare Letters', keys: 'xqz', tip: 'Q and Z are pinky keys, X is your left ring finger. That is every letter of the alphabet.' },
+  { title: 'Comma and Period', keys: ',.', tip: 'Comma is your right middle finger, period is your right ring finger. Type a space after each one.' },
+  { title: 'Capital Letters', keys: '', shift: true, tip: 'Hold Shift with the pinky on the opposite hand from the letter. Capital F? Your right pinky holds Shift.' },
+  { title: 'Punctuation', keys: "'?", tip: "Apostrophe is a right pinky reach. Question mark is Shift plus the slash key." },
+];
+const KEY_LESSONS = LESSONS.length;
+[15, 20, 25, 30, 35, 40].forEach(w => LESSONS.push({
+  title: `Speed Run ${w}`, keys: '', fluency: true, wpm: w,
+  tip: `Type fun facts and hit ${w} words per minute with 92% accuracy in the Mission Log to clear this mission. Smooth and steady beats rushing.`
+}));
+
+const STEPS = [
+  { id: 'warm', name: 'Warm-up', secs: 60 },
+  { id: 'learn', name: 'New keys', secs: 120 },
+  { id: 'words', name: 'Mission Log', secs: 180 },
+  { id: 'game', name: 'Meteor Storm', secs: 240 },
+];
+
+const FINGERS = { lp: 'left pinky', lr: 'left ring finger', lm: 'left middle finger', li: 'left index finger', ri: 'right index finger', rm: 'right middle finger', rr: 'right ring finger', rp: 'right pinky', th: 'either thumb' };
+const FMAP = {};
+[['qaz', 'lp'], ['wsx', 'lr'], ['edc', 'lm'], ['rfvtgb', 'li'], ['yhnujm', 'ri'], ['ik,', 'rm'], ['ol.', 'rr'], ["p;/'?", 'rp'], [' ', 'th']]
+  .forEach(([s, f]) => { for (const c of s) FMAP[c] = f; });
+const ROWS = [
+  ['q','w','e','r','t','y','u','i','o','p'],
+  ['a','s','d','f','g','h','j','k','l',';',"'"],
+  ['shiftL','z','x','c','v','b','n','m',',','.','/','shiftR'],
+  ['space'],
+];
+
+const WORDS = [...new Set(`a ad add adds ads all as ask asks dad dads fad fads fall falls flask lad lads lass sad salad salsa alfalfa had has hash dash gash glad flag flags flash half hall halls shall slash gal gala sash lash jag aha
+jade fade lake like hike ideal sled slide kid kids lid did dig fig jig file fill feel deal heal seal sea see seed lead idea side shed shell shield fish
+about above across act after again age ago air almost alone along also always am among an and angle animal answer ant any are area arm army around art at ate away
+baby back bad bag bake ball band bank bar base bat be bear beat bed bee been before began begin being bell below best better big bike bird bit black blade blank blast blue boat body bold bone book boss both box boy brain brave bread break bright bring brown bug build built burn bus busy but buy by
+cake call came camp can cap car card care case cat catch cave cell chair chance change chess chief child chip city class clean clear climb clock close cloud club coast code cold come cool copy corn cost could count cover crab crash crew cross crowd cub cup cut
+dance dare dark data day dear deep desk dinner dirt dish do does dog done door down drag draw dream dress drink drive drop drum dry duck dust
+each eagle ear early earth east easy eat edge egg eight else end enjoy enough even ever every exam extra eye
+game gas gate gave gear get ghost giant gift girl give glass go goal gold golf gone good got grab grade grass great green grew ground group grow guess guide gum
+hair hand hang happy hard hat have he head hear heard heart heat held hello help her here hero hid hide high hill him his hit hold hole home hook hope horse hot hour house how huge human hunt hurry
+i ice if in ink inside into is island it its jacket jam jar jazz jeans jelly jet job jog join joke judge juice jump jungle just
+keep kept key kick kind king kite knee knew know lab lamp land large last late laugh lava law lazy leaf learn left leg less let level life lift light lime line lion list little live lock log long look lose loss lost lot loud love low luck lunch
+made magic mail main make man many map mark mask match math may maze me meal mean meet melt metal mice middle might milk mind mine mint miss mix model moon more most mouse move much mud music must my
+name near neat neck need nest net never new next nice night nine no noise north nose not note now number
+oak ocean odd of off often oil old on once one only open or orange order other our out over own owl
+pack page paint pair pan paper park part pass past path paw pay peace pen pencil people pet phone pick pie piece pig pile pilot pink pizza place plan planet plant play plus pole pond pool pop power press pretty prize pull pump puzzle
+quack queen quest quick quiet quit quiz race radio rain raise ran rank rare rat reach read ready real red rest rice rich ride right ring rise river road robot rock rocket roll roof room root rope rose round row rule run rush
+safe said sail salt same sand sat save saw say scale school score seat second seen sell send set seven shade shake shape share shark sharp she sheep shine ship shirt shoe shop short shot should show shut sick sight sign silly simple sing sink sit six size skate ski skill skin skip sky sleep slow small smart smell smile snack snake snow so soap soccer sock soft soil sold solid some son song soon sort sound soup south space spark speak speed spell spend spider spin spot spring spy square stage stair stand star start state stay step stick still stone stop store storm story strong stuck study such sugar sun super sure swim
+table tail take talk tall tank tape task taste team tell ten tent test than that the their them then there these they thing think this those three threw throw tide tiger time tiny to today toe told tool top torch toss total touch tower town toy track trade train trap tree trick trip truck true try turn twin two
+under unit up upon us use valley van very view visit voice volcano vote wait wake walk wall want warm was wash watch water wave way we wear web week well went were west wet whale what wheel when where which while white who whole why wide wild will win wind window wing winter wise wish with wolf won wood word work world worm would wow write wrong
+yard year yell yellow yes yet you young your zap zebra zero zip zone zoom`.split(/\s+/).filter(Boolean))];
+
+const FACTS = [
+  'Octopuses have three hearts, and their blood is blue.',
+  'A day on Venus is longer than a whole year on Venus.',
+  'Honey never spoils. Explorers found honey in ancient tombs that was still safe to eat.',
+  'Sharks were swimming in the ocean before trees grew on land.',
+  'A group of flamingos is called a flamboyance.',
+  'Bananas are berries, but strawberries are not.',
+  'Wombats make poop shaped like little cubes.',
+  'Sloths can hold their breath longer than dolphins can.',
+  'The Eiffel Tower grows a little taller in summer because hot metal expands.',
+  'Cows have best friends and get stressed when they are kept apart.',
+  'Lightning is about five times hotter than the surface of the sun.',
+  'Sea otters hold hands while they sleep so they do not drift apart.',
+  'Butterflies taste their food with their feet.',
+  'Astronauts grow a little taller in space because their spines stretch out.',
+  'Saturn is so light that it would float in a bathtub big enough to hold it.',
+  "A blue whale's heart is about as big as a small car.",
+  'Some penguins give a smooth pebble to the penguin they want as a partner.',
+  'Crows can remember human faces, and they can hold a grudge.',
+  'Koalas sleep for most of the day, sometimes up to twenty hours.',
+  'Jellyfish have drifted through the oceans for millions of years without a brain.',
+  'Owls cannot move their eyes, so they turn their whole heads instead.',
+  'Thousands of rubber ducks once floated across the ocean after a ship lost its cargo.',
+  'Mars has the tallest volcano in the solar system. It is called Olympus Mons.',
+  "A shrimp's heart is in its head.",
+  "Elephants can't jump, but they are great swimmers.",
+  'Frogs do not drink water with their mouths. They soak it in through their skin.',
+  'Dolphins call each other by name using special whistles.',
+  'Tigers have striped skin, not just striped fur.',
+  'The moon drifts a tiny bit farther away from Earth every year.',
+  'Can you hum while holding your nose? Most people cannot.',
+  'A day on Mars is only a little longer than a day on Earth.',
+  'Hummingbirds are the only birds that can fly backward.',
+  'Glass frogs have see through skin, so you can watch their hearts beat.',
+  'Why do cats purr? Scientists think it may help their bones heal.',
+  'The dot over a lowercase i is called a tittle.',
+  'There are more trees on Earth than stars in the Milky Way.',
+  'A cloud can weigh more than a million pounds.',
+  'Some turtles can breathe through their rear ends.',
+  'Ants do not sleep like we do. They take hundreds of tiny naps a day.',
+  'Pineapples take about two years to grow.',
+  'The first computer bug was a real moth stuck inside a computer.',
+  'Peanuts are not nuts. They grow underground, like beans.',
+  'Polar bears have black skin under their white fur.',
+  'Your fingernails grow faster on the hand you write with.',
+  'Kangaroos cannot walk backward.',
+  'Mount Everest grows a tiny bit taller every year.',
+];
+const CONTRACTIONS = ["it's", "don't", "can't", "I'll", "we're", "you're", "let's", "that's", "what's", "isn't", "didn't", "won't", "he's", "she's", "they're", "I'm"];
+const TIPS = ['Sit up tall with your feet flat on the floor.', 'Let your wrists float. Do not rest them on the laptop.', 'Eyes on the screen, not your fingers.', 'Accuracy first. Speed shows up on its own.', 'Every reach starts and ends on the home row.', 'Tap the keys lightly. No need to pound them.'];
+const RANKS = [[0, 'Cadet'], [400, 'Pilot'], [1200, 'Navigator'], [3000, 'Captain'], [6000, 'Commander'], [10000, 'Admiral'], [16000, 'Legend']];
+
+/* ---------------- saved progress ---------------- */
+const STORE = 'starkeys.v1';
+const fresh = () => ({ v: 1, lesson: 0, xp: 0, streak: 0, lastDay: null, doneDay: null, history: [], keyStats: {}, bestMeteor: 0, passes: {}, startDate: today(), goalDate: '2026-12-31' });
+let P = fresh();
+try { const raw = localStorage.getItem(STORE); if (raw) P = Object.assign(fresh(), JSON.parse(raw)); } catch (e) {}
+const save = () => { try { localStorage.setItem(STORE, JSON.stringify(P)); } catch (e) {} };
+
+function lessonInfo(idx) {
+  const letters = new Set([' ']); let shift = false;
+  for (let i = 0; i <= Math.min(idx, KEY_LESSONS - 1); i++) {
+    const L = LESSONS[i]; if (L.shift) shift = true; for (const c of L.keys) letters.add(c);
+  }
+  return { letters, shift, allLetters: idx >= 12 };
+}
+const baseKey = ch => ch === '?' ? '/' : ch.toLowerCase();
+function weakKeys(letters) {
+  return Object.entries(P.keyStats)
+    .filter(([k, s]) => (!letters || letters.has(k) || (k === '/' && letters.has('?'))) && s.h + s.m >= 10)
+    .map(([k, s]) => ({ k, rate: s.m / (s.h + s.m) }))
+    .filter(x => x.rate >= 0.05).sort((a, b) => b.rate - a.rate).slice(0, 4);
+}
+function recordKey(want, ok) {
+  if (!want || want === ' ') return;
+  const k = baseKey(want);
+  const s = P.keyStats[k] || (P.keyStats[k] = { h: 0, m: 0 });
+  ok ? s.h++ : s.m++;
+}
+const rankFor = xp => { let r = RANKS[0], next = null; for (let i = 0; i < RANKS.length; i++) { if (xp >= RANKS[i][0]) { r = RANKS[i]; next = RANKS[i + 1] || null; } } return { name: r[1], at: r[0], next }; };
+
+/* ---------------- text generators ---------------- */
+function weightedPick(arr, ws, tot) { let r = Math.random() * tot; for (let i = 0; i < arr.length; i++) { r -= ws[i]; if (r <= 0) return arr[i]; } return arr[arr.length - 1]; }
+function wordLineGen(words, weightFn, opts = {}) {
+  const ws = words.map(weightFn), tot = ws.reduce((a, b) => a + b, 0);
+  return () => {
+    const out = []; let n = 0, prev = '';
+    while (n < (opts.len || 40)) {
+      let w = weightedPick(words, ws, tot);
+      if (w === prev && words.length > 1) continue;
+      prev = w;
+      if (opts.caps && Math.random() < 0.5) w = w[0].toUpperCase() + w.slice(1);
+      out.push(w); n += w.length + 1;
+    }
+    return out.join(' ');
+  };
+}
+function groupLineGen(focus, pool, len = 38) {
+  return () => {
+    const out = []; let n = 0;
+    while (n < len) {
+      let g = '';
+      if (Math.random() < 0.22) { const c = pick(focus); g = c + c + c; }
+      else { const sz = 2 + rand(3); for (let i = 0; i < sz; i++) g += Math.random() < 0.6 ? pick(focus) : pick(pool); }
+      out.push(g); n += g.length + 1;
+    }
+    return out.join(' ');
+  };
+}
+function punctLineGen(words) {
+  return () => {
+    const out = []; let n = 0, run = 0;
+    while (n < 38) {
+      let w = pick(words); run++;
+      if (run >= 2 + rand(3)) { w += Math.random() < 0.5 ? ',' : '.'; run = 0; }
+      out.push(w); n += w.length + 1;
+    }
+    return out.join(' ');
+  };
+}
+function questionLineGen(words) {
+  return () => {
+    const out = []; let n = 0, cap = true;
+    while (n < 38) {
+      const r = Math.random(); let w;
+      if (r < 0.4) w = pick(CONTRACTIONS); else w = pick(words);
+      if (cap) w = w[0].toUpperCase() + w.slice(1);
+      cap = false;
+      if (Math.random() < 0.22) { w += Math.random() < 0.6 ? '?' : '.'; cap = true; }
+      out.push(w); n += w.length + 1;
+    }
+    return out.join(' ');
+  };
+}
+function cleanFor(s, info) {
+  if (!info.shift) s = s.toLowerCase();
+  s = [...s].filter(c => info.letters.has(c.toLowerCase())).join('');
+  return s.replace(/\s+/g, ' ').trim();
+}
+// Splits a sentence into evenly sized lines of about 40 characters, so no line is a lonely word.
+function chunk(s, max = 40) {
+  const target = s.length / Math.ceil(s.length / max);
+  const out = []; let line = '';
+  for (const w of s.split(' ')) {
+    if (line && line.length + w.length / 2 >= target) { out.push(line); line = w; } else line = line ? line + ' ' + w : w;
+  }
+  if (line) out.push(line);
+  return out;
+}
+function factGen(info) {
+  let order = [], queue = [];
+  return () => {
+    while (!queue.length) {
+      if (!order.length) order = FACTS.map((_, i) => i).sort(() => Math.random() - 0.5);
+      const t = cleanFor(FACTS[order.pop()], info);
+      if (t) queue = chunk(t);
+    }
+    return queue.shift();
+  };
+}
+function makeGen(stepId, idx) {
+  const L = LESSONS[idx], info = lessonInfo(idx);
+  const pool = [...info.letters].filter(c => /[a-z;]/.test(c));
+  const words = WORDS.filter(w => [...w].every(c => info.letters.has(c)));
+  const newKeys = [...L.keys].filter(c => /[a-z;]/.test(c));
+  const weak = weakKeys(info.letters).map(w => w.k).filter(k => /[a-z;]/.test(k));
+  const hasAny = keys => w => keys.some(k => w.includes(k)) ? 4 : 1;
+  if (stepId === 'warm') {
+    const focus = weak.length ? weak : (newKeys.length ? newKeys : pool);
+    if (words.length >= 20) return wordLineGen(words, hasAny(focus));
+    return groupLineGen(focus, pool);
+  }
+  if (stepId === 'learn') {
+    if (L.shift) return wordLineGen(words, () => 1, { caps: true });
+    if (L.keys === ',.') return punctLineGen(words);
+    if (L.keys === "'?") return questionLineGen(words);
+    if (L.fluency) {
+      const focus = weak.length ? weak : ['b', 'p', 'y', 'v', 'w', 'x', 'q', 'z'];
+      return wordLineGen(words, hasAny(focus), { caps: true });
+    }
+    return groupLineGen(newKeys, pool);
+  }
+  // words
+  if (idx >= 12) return factGen(info);
+  if (words.length >= 8) return wordLineGen(words, newKeys.length ? hasAny(newKeys) : () => 1);
+  return groupLineGen(pool, pool);
+}
+function gameWordGen(idx) {
+  const info = lessonInfo(idx);
+  const letters = [...info.letters].filter(c => /[a-z]/.test(c));
+  const ws = WORDS.filter(w => w.length <= 7 && [...w].every(c => info.letters.has(c)));
+  if (ws.length >= 12) return () => pick(ws);
+  return () => { let s = ''; const n = 1 + rand(3); for (let i = 0; i < n; i++) s += pick(letters); return s; };
+}
+
+/* ---------------- home ---------------- */
+const lessonLabel = i => i < KEY_LESSONS ? `Mission ${i + 1}` : `Mission ${i + 1}`;
+const keyCaps = L => L.shift ? ['Shift'] : [...L.keys].map(c => c.toUpperCase());
+const fingerClass = c => 'f-' + (FMAP[baseKey(c)] || 'th');
+function pathAt(d) {
+  const T = dayDiff(P.startDate, P.goalDate), t = dayDiff(P.startDate, d);
+  if (T <= 0) return 32;
+  const k = Math.min(28, T * 0.4);
+  if (t <= 0) return 0;
+  if (t <= k) return 12 * t / k;
+  return Math.min(32, 12 + 20 * (t - k) / (T - k));
+}
+function renderHeader() {
+  const r = rankFor(P.xp);
+  $('#rank').textContent = r.name;
+  const pct = r.next ? (P.xp - r.at) / (r.next[0] - r.at) : 1;
+  $('#xpfill').style.width = (pct * 100).toFixed(1) + '%';
+  $('#xptext').textContent = r.next ? `${P.xp} XP · ${r.next[0] - P.xp} to ${r.next[1]}` : `${P.xp} XP · top rank`;
+  const alive = P.lastDay && dayDiff(P.lastDay, today()) <= 1;
+  const n = alive ? P.streak : 0;
+  $('#streakN').textContent = `${n} day streak`;
+}
+function renderHome() {
+  renderHeader();
+  const idx = P.lesson, L = LESSONS[idx];
+  const doneToday = P.doneDay === today();
+  $('#hEyebrow').textContent = L.fluency ? "Today's mission · speed phase · 10 minutes" : "Today's mission · 10 minutes";
+  $('#hTitle').textContent = `${lessonLabel(idx)} · ${L.title}`;
+  const caps = L.fluency ? [`${L.wpm} WPM`] : keyCaps(L);
+  $('#hCaps').innerHTML = caps.map(c => `<span class="cap ${c.length === 1 ? fingerClass(c.toLowerCase()) : ''}">${esc(c)}</span>`).join('');
+  $('#hTip').textContent = L.tip;
+  if (doneToday) {
+  } else {
+    $('#hAction').innerHTML = `<button class="btn" id="launch" type="button">Launch mission</button>`;
+    $('#launch').onclick = startSession;
+  }
+  const learnName = L.fluency ? 'Tricky keys' : 'New keys';
+  const learnSub = L.fluency ? 'Words packed with your weakest keys' : (L.shift ? 'Capital letters with Shift' : 'Drills for ' + keyCaps(L).join(' and '));
+  $('#hPlan').innerHTML = [
+    ['Warm-up', 'Review keys you already know', 1],
+    [learnName, learnSub, 2],
+    ['Mission Log', idx >= 12 ? 'Fun facts. This round scores your speed' : 'Real words. This round scores your speed', 3],
+    ['Meteor Storm', 'Blast meteors by typing their words', 4],
+  ].map(([t, s, m]) => `<li><div><strong>${t}</strong><span class="sub">${s}</span></div><span class="min">${m} min</span></li>`).join('');
+  renderChart();
+  renderWeak();
+  renderMap();
+  renderParent();
+}
+function renderChart() {
+  const W = 640, H = 220, pl = 34, pr = 16, pt = 12, pb = 28;
+  const hist = P.history;
+  let end = P.goalDate; const last = hist.length ? hist[hist.length - 1].d : P.startDate;
+  if (last > end) end = last;
+  const span = Math.max(14, dayDiff(P.startDate, end));
+  const x = d => pl + (W - pl - pr) * clamp(dayDiff(P.startDate, d), 0, span) / span;
+  const ymax = Math.max(50, Math.ceil((Math.max(0, ...hist.map(h => h.wpm)) + 5) / 10) * 10);
+  const y = v => pt + (H - pt - pb) * (1 - v / ymax);
+  let s = '';
+  s += `<rect x="${pl}" y="${y(40)}" width="${W - pl - pr}" height="${y(32) - y(40)}" fill="rgba(255,181,71,.12)"/>`;
+  for (let v = 0; v <= ymax; v += 10) s += `<line x1="${pl}" x2="${W - pr}" y1="${y(v)}" y2="${y(v)}" stroke="#2e3872" stroke-width="1"/><text x="${pl - 8}" y="${y(v) + 4}" text-anchor="end">${v}</text>`;
+  s += `<text x="${W - pr - 4}" y="${y(40) + 13}" text-anchor="end" style="fill:#ffb547">goal zone 32–40</text>`;
+  const T = dayDiff(P.startDate, P.goalDate), k = Math.min(28, Math.max(0, T * 0.4));
+  if (T > 0) s += `<polyline points="${x(P.startDate)},${y(0)} ${x(addDays(P.startDate, Math.round(k)))},${y(12)} ${x(P.goalDate)},${y(32)}" fill="none" stroke="#62d9ff" stroke-width="1.5" stroke-dasharray="5 5" opacity=".8"/>`;
+  const t = today(); if (dayDiff(P.startDate, t) >= 0 && dayDiff(t, end) >= 0) s += `<line x1="${x(t)}" x2="${x(t)}" y1="${pt}" y2="${H - pb}" stroke="#6c76a8" stroke-dasharray="2 4"/>`;
+  const byDay = {}; hist.forEach(h => { byDay[h.d] = Math.max(byDay[h.d] || 0, h.wpm); });
+  const pts = Object.keys(byDay).sort().map(d => [x(d), y(byDay[d]), byDay[d]]);
+  if (pts.length) {
+    if (pts.length > 1) s += `<polygon points="${pts[0][0]},${y(0)} ${pts.map(p => p[0] + ',' + p[1]).join(' ')} ${pts[pts.length - 1][0]},${y(0)}" fill="rgba(255,181,71,.10)"/>`;
+    s += `<polyline points="${pts.map(p => p[0] + ',' + p[1]).join(' ')}" fill="none" stroke="#ffb547" stroke-width="2.5" stroke-linejoin="round"/>`;
+    pts.forEach((p, i) => { const lastP = i === pts.length - 1; s += `<circle cx="${p[0]}" cy="${p[1]}" r="${lastP ? 5.5 : 3}" fill="#ffb547" stroke="#0a0e26" stroke-width="${lastP ? 2 : 0}"/>`; });
+    const lp = pts[pts.length - 1]; s += `<text x="${clamp(lp[0], pl + 20, W - pr - 20)}" y="${lp[1] - 10}" text-anchor="middle" style="fill:#eef1ff;font-weight:600">${Math.round(lp[2])}</text>`;
+  } else {
+    s += `<text x="${(W + pl) / 2}" y="${y(22)}" text-anchor="middle" style="fill:#a3abd6;font-size:13px">Your speed appears here after the first mission.</text>`;
+  }
+  s += `<text x="${pl}" y="${H - 8}">${fmtDate(P.startDate)}</text><text x="${W - pr}" y="${H - 8}" text-anchor="end">${fmtDate(P.goalDate)} goal</text>`;
+  s += `<text x="${pl + 70}" y="${H - 8}" style="fill:#62d9ff">- - target path</text>`;
+  $('#chart').innerHTML = s;
+
+  const goalChip = $('#goalChip');
+  const recent = hist.slice(-3), avg = recent.length ? recent.reduce((a, h) => a + h.wpm, 0) / recent.length : 0;
+  let cls = 'chip', txt = 'First mission today';
+  if (hist.length) {
+    if (avg >= 32) { cls = 'chip good'; txt = 'In the goal zone'; }
+    else if (avg >= pathAt(t) - 2) { cls = 'chip good'; txt = 'On track'; }
+    else if (P.lesson < KEY_LESSONS) { cls = 'chip info'; txt = 'Learning keys first'; }
+    else { cls = 'chip warn'; txt = 'Behind the path'; }
+  }
+  goalChip.className = cls; goalChip.textContent = txt;
+  $('#nLatest').textContent = hist.length ? Math.round(hist[hist.length - 1].wpm) : '–';
+  $('#nBest').textContent = hist.length ? Math.round(Math.max(...hist.map(h => h.wpm))) : '–';
+  const l5 = hist.slice(-5);
+  $('#nAcc').textContent = l5.length ? Math.round(l5.reduce((a, h) => a + h.acc, 0) / l5.length) + '%' : '–';
+}
+function renderWeak() {
+  const w = weakKeys(null);
+  $('#weakList').innerHTML = w.length
+    ? w.map(x => `<span class="cap ${fingerClass(x.k)}" title="${Math.round(x.rate * 100)}% missed">${esc(x.k === ' ' ? 'space' : x.k.toUpperCase())}</span>`).join('')
+    : `<span style="color:var(--ink-dim)">No trouble keys yet.</span>`;
+  $('#legend').innerHTML = [['lp', 'Pinkies'], ['lr', 'Ring fingers'], ['lm', 'Middle fingers'], ['li', 'Left index'], ['ri', 'Right index'], ['th', 'Thumbs']]
+    .map(([f, n]) => `<span class="f-${f}"><i></i>${n}</span>`).join('');
+}
+function renderMap() {
+  let h = '<li class="phase-label">Phase 1 · Learn every key</li>';
+  LESSONS.forEach((L, i) => {
+    if (i === KEY_LESSONS) h += '<li class="phase-label">Phase 2 · Build speed</li>';
+    const st = i < P.lesson || P.passes[i] ? 'done' : i === P.lesson ? 'cur' : 'locked';
+    const k = L.fluency ? `${L.wpm} WPM` : keyCaps(L).join(' ');
+    h += `<li class="${st}"><span class="n">${st === 'done' ? 'Cleared' : st === 'cur' ? 'Current' : 'Mission ' + (i + 1)}</span><span class="t">${esc(L.title)}</span><span class="k">${esc(k)}</span></li>`;
+  });
+  $('#map').innerHTML = h;
+}
+function renderParent() {
+  $('#goalDate').value = P.goalDate;
+  $('#startMission').innerHTML = LESSONS.map((L, i) => `<option value="${i}" ${i === P.lesson ? 'selected' : ''}>${lessonLabel(i)} · ${esc(L.title)}</option>`).join('');
+  $('#extraBtn').disabled = P.doneDay !== today();
+  $('#extraBtn').style.opacity = P.doneDay !== today() ? .5 : 1;
+}
+const pnote = t => { $('#pnote').textContent = t; setTimeout(() => { if ($('#pnote').textContent === t) $('#pnote').textContent = ''; }, 4000); };
+$('#goalDate').addEventListener('change', e => { if (e.target.value) { P.goalDate = e.target.value; save(); renderChart(); pnote('Goal date saved.'); } });
+$('#startMission').addEventListener('change', e => { P.lesson = +e.target.value; save(); renderHome(); pnote('Current mission changed.'); });
+$('#extraBtn').addEventListener('click', () => { P.doneDay = null; save(); renderHome(); pnote('One more session unlocked for today.'); });
+$('#copyBtn').addEventListener('click', () => {
+  const code = btoa(unescape(encodeURIComponent(JSON.stringify(P))));
+  const ta = $('#backup'); ta.value = code;
+  const fallback = () => { ta.focus(); ta.select(); pnote('Code selected. Press Ctrl+C to copy it.'); };
+  try { navigator.clipboard.writeText(code).then(() => pnote('Progress code copied.'), fallback); } catch (e) { fallback(); }
+});
+$('#loadBtn').addEventListener('click', () => {
+  try {
+    const data = JSON.parse(decodeURIComponent(escape(atob($('#backup').value.trim()))));
+    if (typeof data.lesson !== 'number') throw 0;
+    P = Object.assign(fresh(), data); save(); renderHome(); pnote('Progress restored.');
+  } catch (e) { pnote('That code did not work. Paste the whole code and try again.'); }
+});
+let resetArmed = 0;
+$('#resetBtn').addEventListener('click', e => {
+  if (Date.now() - resetArmed < 4000) { P = fresh(); save(); renderHome(); e.target.textContent = 'Reset all progress'; pnote('All progress erased.'); resetArmed = 0; return; }
+  resetArmed = Date.now(); e.target.textContent = 'Click again to erase everything';
+  setTimeout(() => { e.target.textContent = 'Reset all progress'; }, 4000);
+});
+
+/* ---------------- keyboard view ---------------- */
+function renderKeyboard(info, ghost) {
+  const unlocked = k => k === 'space' || ((k === 'shiftL' || k === 'shiftR') ? info.shift : (info.letters.has(k) || (k === '/' && info.letters.has('?'))));
+  $('#kbd').innerHTML = ROWS.map(row => `<div class="krow">${row.map(k => {
+    const f = k === 'space' ? 'th' : k === 'shiftL' ? 'lp' : k === 'shiftR' ? 'rp' : FMAP[k];
+    const label = k === 'space' ? '' : k.startsWith('shift') ? 'shift' : k.toUpperCase();
+    const cls = ['key', 'f-' + f, k.startsWith('shift') ? 'wide' : '', k === 'space' ? 'space' : '', (k === 'f' || k === 'j') ? 'bump' : '', unlocked(k) ? '' : 'locked'].join(' ');
+    return `<div class="${cls}" data-k="${esc(k)}">${esc(label)}</div>`;
+  }).join('')}</div>`).join('');
+  $('#kbd').classList.toggle('ghost', !!ghost);
+}
+function setNext(ch) {
+  document.querySelectorAll('.key.next').forEach(el => el.classList.remove('next'));
+  const fe = $('#finger');
+  if (!ch) { fe.innerHTML = ''; return; }
+  const k = ch === ' ' ? 'space' : baseKey(ch);
+  const el = document.querySelector(`.key[data-k="${CSS.escape(k)}"]`); if (el) el.classList.add('next');
+  const f = FMAP[k] || 'th';
+  let txt = `<b class="f-${f}" style="color:var(--fc)">${FINGERS[f]}</b>`;
+  if (ch !== ' ' && (ch !== ch.toLowerCase() || ch === '?')) {
+    const side = f[0] === 'l' ? 'shiftR' : 'shiftL';
+    const se = document.querySelector(`.key[data-k="${side}"]`); if (se) se.classList.add('next');
+    txt += ` · hold Shift with your <b class="f-${side === 'shiftR' ? 'rp' : 'lp'}" style="color:var(--fc)">${side === 'shiftR' ? 'right' : 'left'} pinky</b>`;
+  }
+  fe.innerHTML = `Use your ${txt}`;
+}
+let hintT = 0;
+function scheduleHint() {
+  clearTimeout(hintT); setNext(null);
+  if (!S || S.phase !== 'run') return;
+  const ch = nextChar(); if (ch == null) return;
+  const err = S.typer && S.typer.err;
+  if (S.ghost && !err) hintT = setTimeout(() => setNext(nextChar()), 1400);
+  else setNext(ch);
+}
+function nextChar() {
+  if (!S) return null;
+  if (STEPS[S.step].id === 'game') { const g = S.game; return g && g.active ? g.active.word[g.active.typed] : null; }
+  return S.typer ? S.typer.line[S.typer.i] : null;
+}
+
+/* ---------------- session ---------------- */
+let S = null;
+function show(id) { ['home', 'session', 'summary'].forEach(v => { $('#' + v).hidden = v !== id; }); window.scrollTo(0, 0); }
+function startSession() {
+  const idx = P.lesson, L = LESSONS[idx], info = lessonInfo(idx);
+  S = { idx, L, info, step: 0, phase: 'intro', elapsed: 0, lastKey: 0, stats: {}, typer: null, game: null, ghost: idx >= 6, prevRank: rankFor(P.xp).name, tick: 0 };
+  STEPS.forEach(s => S.stats[s.id] = { correct: 0, keys: 0, ms: 0 });
+  $('#sName').innerHTML = `${lessonLabel(idx)}<small>${esc(L.title)}</small>`;
+  $('#steps').innerHTML = STEPS.map((s, i) => `<div class="seg" id="seg${i}"><span>${i === 1 && L.fluency ? 'Tricky keys' : s.name}</span><div><i></i></div></div>`).join('');
+  renderKeyboard(info, S.ghost);
+  show('session');
+  stepIntro();
+  S.tick = performance.now();
+  S.iv = setInterval(tick, 40);
+  requestAnimationFrame(draw);
+}
+function stepIntro() {
+  const st = STEPS[S.step], L = S.L;
+  S.phase = 'intro'; S.elapsed = 0;
+  const isGame = st.id === 'game';
+  $('#tapeWrap').hidden = isGame; $('#gameWrap').hidden = !isGame;
+  $('#race').hidden = st.id !== 'words';
+  if (isGame) gameInit();
+  else { S.typer = { gen: makeGen(st.id, S.idx), i: 0, err: false }; S.typer.line = S.typer.gen(); S.typer.next = S.typer.gen(); renderTape(); }
+  if (st.id === 'words') S.paceWpm = L.fluency ? L.wpm : Math.max(8, Math.round(bestWordsWpm(S.idx) || 8));
+  let title = st.name, body = '';
+  const tip = pick(TIPS);
+  if (st.id === 'warm') body = S.idx === 0 ? 'Put your fingers on the home row: A S D F on the left, J K L ; on the right. Feel the bumps on F and J. Thumbs rest on the space bar.' : 'Fingers on the home row. Start slow and smooth, and let your hands wake up.';
+  if (st.id === 'learn') {
+    if (L.fluency) { title = 'Tricky keys'; body = 'Words packed with the keys you miss most. Slow down on the tricky ones.'; }
+    else { title = 'New keys: ' + keyCaps(L).join(' '); body = L.tip; }
+  }
+  if (st.id === 'words') body = L.fluency
+    ? `This round is scored. Hit ${L.wpm} WPM with 92% accuracy to clear the mission. Beat the dashed ring to stay on pace.`
+    : 'This round is scored. Get 90% accuracy or better to unlock the next mission. Accuracy matters more than speed right now.';
+  if (st.id === 'game') body = 'Type the word on any meteor to fire your laser. Finish one word before starting the next. Keep meteors away from the city. Three hits and the shields need a reboot.';
+  const caps = st.id === 'learn' && !L.fluency ? `<div class="caps">${keyCaps(L).map(c => `<span class="cap ${c.length === 1 ? fingerClass(c.toLowerCase()) : ''}">${esc(c)}</span>`).join('')}</div>` : '';
+  overlay(`<div class="eyebrow">Step ${S.step + 1} of 4 · ${Math.round(st.secs / 60)} min</div><h2>${esc(title)}</h2>${caps}<p>${esc(body)}</p><p class="key-hint">Tip: ${esc(tip)}</p><button class="btn" data-act="begin" type="button">Start · Space</button>`);
+  updateBars(); setNext(null);
+}
+function overlay(html) { $('#ocard').innerHTML = html; $('#overlay').hidden = !html; }
+function beginStep() { if (S.phase !== 'intro') return; S.phase = 'run'; S.lastKey = performance.now(); overlay(''); scheduleHint(); }
+function pause() {
+  if (!S || S.phase !== 'run') return;
+  S.phase = 'paused'; clearTimeout(hintT);
+  overlay(`<h2>Paused</h2><p>The timer stops while you are away. Press any key to keep going.</p><div class="row-btns"><button class="btn" data-act="resume" type="button">Keep going</button><button class="btn ghost" data-act="leave" type="button">Leave mission</button></div><p class="key-hint">Leaving early means today's mission does not count.</p>`);
+}
+function resume() { if (S.phase !== 'paused') return; S.phase = 'run'; S.lastKey = performance.now(); overlay(''); scheduleHint(); }
+function endStep() {
+  const st = STEPS[S.step], s = S.stats[st.id];
+  S.phase = 'result'; clearTimeout(hintT); setNext(null);
+  const wpm = calcWpm(s), acc = calcAcc(s);
+  let extra = '';
+  if (st.id === 'game') {
+    const best = Math.max(P.bestMeteor, S.game.score);
+    extra = `<div><b>${S.game.score}</b><span>${S.game.score > P.bestMeteor ? 'new best score' : 'score · best ' + best}</span></div>`;
+  }
+  const last = S.step === STEPS.length - 1;
+  overlay(`<div class="eyebrow">${esc(st.name)} done</div><h2>${last ? 'That is ten minutes!' : 'Nice work. Shake out your hands.'}</h2><div class="ostats"><div><b>${wpm}</b><span>WPM</span></div><div><b>${acc}%</b><span>accuracy</span></div>${extra}</div><button class="btn" data-act="next" type="button">${last ? 'See mission report' : 'Next step'} · Space</button>`);
+  updateBars();
+}
+function nextStep() { if (S.phase !== 'result') return; S.step++; if (S.step >= STEPS.length) finishSession(); else stepIntro(); }
+function leaveSession() { save(); stopClock(); S = null; show('home'); renderHome(); }
+const calcWpm = s => s.ms > 2000 ? Math.round(s.correct / 5 / (s.ms / 60000)) : 0;
+const calcAcc = s => s.keys ? Math.round(100 * s.correct / s.keys) : 100;
+const bestWordsWpm = idx => Math.max(0, ...P.history.filter(h => h.l === idx).map(h => h.wpm));
+
+function updateBars() {
+  STEPS.forEach((st, i) => {
+    const seg = $('#seg' + i); if (!seg) return;
+    seg.className = 'seg' + (i < S.step || (i === S.step && S.phase === 'result') ? ' past' : i === S.step ? ' on' : '');
+    const f = i < S.step ? 1 : i === S.step ? clamp(S.elapsed / (st.secs * 1000), 0, 1) : 0;
+    seg.querySelector('i').style.width = (f * 100) + '%';
+  });
+  const st = STEPS[S.step];
+  const left = Math.max(0, st.secs - S.elapsed / 1000);
+  const totalLeft = Math.max(0, STEPS.slice(S.step).reduce((a, s) => a + s.secs, 0) - S.elapsed / 1000);
+  const mmss = v => Math.floor(v / 60) + ':' + String(v % 60).padStart(2, '0');
+  $('#clock').firstChild.nodeValue = mmss(Math.ceil(left));
+  $('#clockTotal').textContent = mmss(Math.ceil(totalLeft)) + ' left today';
+  const s = S.stats[st.id];
+  $('#lWpm').textContent = calcWpm(s); $('#lAcc').textContent = calcAcc(s) + '%';
+  if (st.id === 'words') {
+    const cps = S.paceWpm * 5 / 60, total = cps * st.secs;
+    const you = clamp(s.correct / total, 0, 1), pace = clamp(cps * s.ms / 1000 / total, 0, 1);
+    $('#rYou').style.left = (you * 100) + '%'; $('#rPace').style.left = (pace * 100) + '%';
+    const diff = Math.round(s.correct - cps * s.ms / 1000);
+    $('#rText').textContent = s.ms < 3000 ? `Dashed ring = ${S.paceWpm} WPM goal pace. Stay ahead of it.` : diff >= 0 ? `${diff} letters ahead of ${S.paceWpm} WPM pace` : `${-diff} letters behind ${S.paceWpm} WPM pace. Smooth and steady.`;
+  }
+}
+// Clock and game physics run on a steady interval; drawing rides animation frames.
+function tick() {
+  if (!S) return;
+  const t = performance.now(), dt = Math.min(100, t - S.tick); S.tick = t;
+  const st = STEPS[S.step];
+  if (S.phase === 'run') {
+    if (t - S.lastKey > 6000) pause();
+    else { S.elapsed += dt; S.stats[st.id].ms += dt; }
+    if (st.id === 'game' && S.phase === 'run') gameUpdate(dt / 1000);
+    if (S.elapsed >= st.secs * 1000) endStep();
+  }
+  if (S && (S.frame = (S.frame || 0) + 1) % 4 === 0) updateBars();
+}
+function draw() {
+  if (!S) return;
+  if (STEPS[S.step].id === 'game' && S.game) gameDraw();
+  requestAnimationFrame(draw);
+}
+function stopClock() { if (S) clearInterval(S.iv); }
+
+/* typing */
+function renderTape() {
+  const T = S.typer; let h = '';
+  for (let i = 0; i < T.line.length; i++) {
+    const c = T.line[i];
+    const cls = i < T.i ? 'd' : i === T.i ? (T.err ? 'c bad' : 'c') : 't';
+    h += `<span class="${cls}">${esc(c)}</span>`;
+  }
+  $('#tapeLine').innerHTML = h; $('#tapeNext').textContent = T.next;
+}
+function typeKey(ch) {
+  const T = S.typer, s = S.stats[STEPS[S.step].id], want = T.line[T.i];
+  s.keys++;
+  const ok = ch === want; recordKey(want, ok);
+  if (ok) { s.correct++; T.i++; T.err = false; if (T.i >= T.line.length) { T.line = T.next; T.next = T.gen(); T.i = 0; } }
+  else { T.err = true; const el = $('#tapeLine'); el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
+  renderTape(); scheduleHint();
+}
+
+/* ---------------- Meteor Storm ---------------- */
+const CLR = {};
+function gameInit() {
+  const cv = $('#game');
+  const recent = P.history.slice(-3);
+  const base = recent.length ? recent.reduce((a, h) => a + h.wpm, 0) / recent.length : 8;
+  const target = clamp(base * 0.85, 6, 45);
+  const cs = getComputedStyle(document.documentElement);
+  ['--deep', '--panel', '--panel-2', '--ink', '--ink-dim', '--amber', '--cyan', '--bad', '--good', '--line'].forEach(k => CLR[k] = cs.getPropertyValue(k).trim());
+  S.game = { cv, ctx: cv.getContext('2d'), meteors: [], parts: [], shots: [], score: 0, combo: 0, shields: 3, active: null, spawnT: 0.3, down: 0, shake: 0, gen: gameWordGen(S.idx), cps: target * 5 / 60, stars: [], city: [] };
+  fitGame();
+  updateHud();
+}
+function fitGame() {
+  const g = S && S.game; if (!g) return;
+  const r = g.cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  if (!r.width) return;
+  g.W = r.width; g.H = r.height;
+  g.cv.width = Math.round(r.width * dpr); g.cv.height = Math.round(r.height * dpr);
+  g.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.stars = Array.from({ length: 70 }, () => ({ x: Math.random() * g.W, y: Math.random() * (g.H - 60), r: Math.random() < .2 ? 2 : 1, a: .3 + Math.random() * .6 }));
+  g.city = []; let x = 0;
+  while (x < g.W) { const w = 26 + rand(40); g.city.push({ x, w, h: 14 + rand(26) }); x += w + 2; }
+}
+window.addEventListener('resize', fitGame);
+function spawnMeteor(g, prog) {
+  let word = g.gen();
+  for (let i = 0; i < 8 && g.meteors.some(m => m.word[0] === word[0]); i++) word = g.gen();
+  const fall = word.length / g.cps * 2.4 + 3;
+  const vy = (g.H - 70) / fall * (1 + prog * 0.5);
+  g.meteors.push({ word, typed: 0, x: 50 + Math.random() * (g.W - 100), y: -20, vy, r: 10 + Math.min(word.length, 7) * 1.6, spin: Math.random() * 6 });
+}
+function gameUpdate(dt) {
+  const g = S.game; if (!g.W) fitGame();
+  const prog = S.elapsed / (STEPS[S.step].secs * 1000);
+  g.shake = Math.max(0, g.shake - dt);
+  g.parts.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 60 * dt; p.life -= dt; });
+  g.parts = g.parts.filter(p => p.life > 0);
+  g.shots.forEach(s => s.life -= dt); g.shots = g.shots.filter(s => s.life > 0);
+  if (g.down > 0) { g.down -= dt; if (g.down <= 0) { g.shields = 3; g.meteors = []; g.active = null; updateHud(); } return; }
+  g.spawnT -= dt;
+  if (g.spawnT <= 0 && g.meteors.length < 6) {
+    spawnMeteor(g, prog);
+    const len = g.meteors[g.meteors.length - 1].word.length;
+    g.spawnT = Math.max(1.2, (len / g.cps) * 1.1 / (1 + prog * 0.6));
+  }
+  if (g.meteors.length < 2) g.spawnT = Math.min(g.spawnT, 1.2);
+  const ground = g.H - 46;
+  for (const m of g.meteors) {
+    m.y += m.vy * dt; m.spin += dt;
+    if (m.y + m.r > ground) {
+      m.dead = true; g.shields--; g.combo = 0; g.shake = .35;
+      burst(g, m.x, ground, CLR['--bad'], 26);
+      if (g.active === m) g.active = null;
+      if (g.shields <= 0) g.down = 2.5;
+      updateHud(); scheduleHint();
+    }
+  }
+  g.meteors = g.meteors.filter(m => !m.dead);
+}
+function burst(g, x, y, color, n) { for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2, v = 60 + Math.random() * 200; g.parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 40, life: .4 + Math.random() * .5, color }); } }
+function gameKey(ch) {
+  const g = S.game, s = S.stats.game; if (g.down > 0 || !g.meteors.length) return;
+  s.keys++;
+  let ok = false;
+  if (!g.active) {
+    const c = g.meteors.filter(m => m.word[0] === ch).sort((a, b) => b.y - a.y)[0];
+    if (c) { g.active = c; c.typed = 1; ok = true; recordKey(ch, true); }
+  } else {
+    const want = g.active.word[g.active.typed];
+    ok = ch === want; recordKey(want, ok);
+    if (ok) g.active.typed++;
+  }
+  if (ok) {
+    s.correct++;
+    const m = g.active;
+    if (m.typed >= m.word.length) {
+      g.combo++;
+      g.score += m.word.length * 10 * (1 + Math.floor(g.combo / 5));
+      g.shots.push({ x: m.x, y: m.y, life: .18 });
+      burst(g, m.x, m.y, CLR['--amber'], 30);
+      m.dead = true; g.meteors = g.meteors.filter(x => !x.dead); g.active = null;
+    }
+  } else { g.combo = 0; g.shake = .12; }
+  updateHud(); scheduleHint();
+}
+function updateHud() {
+  const g = S.game;
+  $('#hudScore').textContent = 'Score ' + g.score;
+  $('#hudCombo').textContent = 'Combo ×' + (1 + Math.floor(g.combo / 5)) + (g.combo ? ` · ${g.combo} in a row` : '');
+  $('#hudShield').textContent = 'Shields ' + '●'.repeat(Math.max(0, g.shields)) + '○'.repeat(3 - Math.max(0, g.shields));
+}
+function gameDraw() {
+  const g = S.game, c = g.ctx; if (!g.W) return;
+  const W = g.W, H = g.H, ground = H - 46, mono = getComputedStyle(document.body).getPropertyValue('--mono') || 'monospace';
+  c.save();
+  if (g.shake > 0) c.translate((Math.random() - .5) * 8, (Math.random() - .5) * 8);
+  const sky = c.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, CLR['--deep']); sky.addColorStop(1, CLR['--panel']);
+  c.fillStyle = sky; c.fillRect(-10, -10, W + 20, H + 20);
+  for (const s of g.stars) { c.globalAlpha = s.a; c.fillStyle = CLR['--ink']; c.fillRect(s.x, s.y, s.r, s.r); }
+  c.globalAlpha = 1;
+  // shield dome
+  if (g.shields > 0) { c.strokeStyle = CLR['--cyan']; c.globalAlpha = .15 + g.shields * .12; c.lineWidth = 2; c.beginPath(); c.ellipse(W / 2, ground + 10, W * .62, 70, 0, Math.PI, 2 * Math.PI); c.stroke(); c.globalAlpha = 1; }
+  // city
+  c.fillStyle = CLR['--panel-2'];
+  for (const b of g.city) c.fillRect(b.x, ground - b.h + 6, b.w, b.h + 40);
+  c.fillStyle = CLR['--amber']; c.globalAlpha = .55;
+  for (const b of g.city) for (let yy = ground - b.h + 12; yy < ground; yy += 9) for (let xx = b.x + 5; xx < b.x + b.w - 5; xx += 9) if ((xx * 7 + yy * 3) % 5 < 2) c.fillRect(xx, yy, 3, 3);
+  c.globalAlpha = 1;
+  c.fillStyle = CLR['--deep']; c.fillRect(0, ground + 6, W, 60);
+  // cannon
+  const cx = W / 2, cy = ground + 4;
+  const tgt = g.active || null;
+  const ang = tgt ? Math.atan2(tgt.y - cy, tgt.x - cx) : -Math.PI / 2;
+  c.save(); c.translate(cx, cy); c.rotate(ang); c.fillStyle = CLR['--ink-dim']; c.fillRect(0, -4, 30, 8); c.restore();
+  c.fillStyle = CLR['--ink']; c.beginPath(); c.arc(cx, cy, 13, Math.PI, 0); c.fill();
+  // shots
+  for (const s of g.shots) { c.strokeStyle = CLR['--cyan']; c.globalAlpha = s.life / .18; c.lineWidth = 3; c.beginPath(); c.moveTo(cx, cy); c.lineTo(s.x, s.y); c.stroke(); }
+  c.globalAlpha = 1;
+  // meteors
+  c.textAlign = 'left'; c.textBaseline = 'middle';
+  c.font = `600 18px ${mono}`;
+  for (const m of g.meteors) {
+    const tr = c.createLinearGradient(m.x, m.y - m.r * 4, m.x, m.y);
+    tr.addColorStop(0, 'rgba(255,181,71,0)'); tr.addColorStop(1, 'rgba(255,181,71,.45)');
+    c.fillStyle = tr; c.beginPath(); c.moveTo(m.x - m.r * .8, m.y); c.lineTo(m.x, m.y - m.r * 4.5); c.lineTo(m.x + m.r * .8, m.y); c.fill();
+    const rg = c.createRadialGradient(m.x - m.r * .3, m.y - m.r * .3, 2, m.x, m.y, m.r);
+    rg.addColorStop(0, '#c99a76'); rg.addColorStop(1, '#5b3c2e');
+    c.fillStyle = rg; c.beginPath(); c.arc(m.x, m.y, m.r, 0, Math.PI * 2); c.fill();
+    c.fillStyle = 'rgba(0,0,0,.25)'; c.beginPath(); c.arc(m.x + Math.cos(m.spin) * m.r * .4, m.y + Math.sin(m.spin) * m.r * .4, m.r * .25, 0, Math.PI * 2); c.fill();
+    if (m === g.active) { c.strokeStyle = CLR['--cyan']; c.lineWidth = 2; c.beginPath(); c.arc(m.x, m.y, m.r + 6, 0, Math.PI * 2); c.stroke(); }
+    const done = m.word.slice(0, m.typed), rest = m.word.slice(m.typed);
+    const tw = c.measureText(m.word).width, lx = clamp(m.x - tw / 2, 6, W - tw - 6), ly = m.y + m.r + 16;
+    c.fillStyle = 'rgba(10,14,38,.82)'; roundRect(c, lx - 8, ly - 13, tw + 16, 26, 7); c.fill();
+    c.fillStyle = CLR['--amber']; c.fillText(done, lx, ly);
+    c.fillStyle = CLR['--ink']; c.fillText(rest, lx + c.measureText(done).width, ly);
+  }
+  for (const p of g.parts) { c.globalAlpha = clamp(p.life * 2, 0, 1); c.fillStyle = p.color; c.fillRect(p.x, p.y, 3, 3); }
+  c.globalAlpha = 1;
+  if (g.down > 0) {
+    c.fillStyle = 'rgba(10,14,38,.7)'; c.fillRect(0, 0, W, H);
+    c.textAlign = 'center'; c.fillStyle = CLR['--bad']; c.font = `700 26px ${getComputedStyle(document.body).getPropertyValue('--display')}`;
+    c.fillText('Shields down! Rebooting...', W / 2, H / 2 - 10);
+    c.fillStyle = CLR['--ink-dim']; c.font = `500 16px ${mono}`; c.fillText('Your score is safe.', W / 2, H / 2 + 22);
+  }
+  c.restore();
+}
+function roundRect(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+
+/* ---------------- finish ---------------- */
+function finishSession() {
+  const idx = S.idx, L = S.L, w = S.stats.words;
+  const wpm = calcWpm(w), acc = calcAcc(w);
+  const scored = w.correct >= 40;
+  const passed = scored && (L.fluency ? (wpm >= L.wpm && acc >= 92) : acc >= 90);
+  const allCorrect = STEPS.reduce((a, s) => a + S.stats[s.id].correct, 0);
+  const allKeys = STEPS.reduce((a, s) => a + S.stats[s.id].keys, 0);
+  const gameScore = S.game ? S.game.score : 0;
+  const xp = Math.round(allCorrect / 2) + Math.round(gameScore / 20) + 100 + (passed ? 150 : 0);
+  const newBest = gameScore > P.bestMeteor;
+  P.xp += xp;
+  P.bestMeteor = Math.max(P.bestMeteor, gameScore);
+  if (scored) P.history.push({ d: today(), wpm, acc, l: idx });
+  if (passed) { P.passes[idx] = true; if (P.lesson === idx && idx < LESSONS.length - 1) P.lesson++; }
+  if (P.lastDay !== today()) { P.streak = P.lastDay && dayDiff(P.lastDay, today()) === 1 ? P.streak + 1 : 1; P.lastDay = today(); }
+  P.doneDay = today();
+  save();
+  const rank = rankFor(P.xp).name, rankUp = rank !== S.prevRank;
+  const nextL = LESSONS[P.lesson];
+  let banner;
+  if (passed && idx === LESSONS.length - 1) banner = `<div class="banner good"><h2>Top speed reached: ${wpm} WPM</h2><p>You cleared the final Speed Run. Keep doing daily missions to lock it in.</p></div>`;
+  else if (passed) banner = `<div class="banner good"><h2>${lessonLabel(idx)} cleared!</h2><p>Unlocked for tomorrow: ${lessonLabel(P.lesson)} · ${esc(nextL.title)}${nextL.fluency ? '' : ' (' + keyCaps(nextL).join(' ') + ')'}.</p></div>`;
+  else if (!scored) banner = `<div class="banner warn"><h2>Mission logged</h2><p>The Mission Log needs a bit more typing before it can be scored. Same mission tomorrow.</p></div>`;
+  else if (L.fluency) banner = `<div class="banner warn"><h2>${wpm} WPM at ${acc}% accuracy</h2><p>To clear this mission: ${L.wpm} WPM with 92% accuracy. ${acc < 92 ? 'Slow down a little and aim for clean typing first.' : 'Your accuracy is great. The speed will come with daily practice.'}</p></div>`;
+  else banner = `<div class="banner warn"><h2>So close. ${acc}% accuracy</h2><p>Hit 90% accuracy in the Mission Log to unlock the next mission. Go a little slower tomorrow and keep your eyes on the screen.</p></div>`;
+  const weak = weakKeys(S.info.letters);
+  const sum = $('#summary');
+  sum.innerHTML = `
+    <div class="eyebrow">Mission report · ${fmtDate(today())}</div>
+    <h1>${rankUp ? 'Promoted to ' + esc(rank) + '!' : 'Ten minutes done. Great flying.'}</h1>
+    <p class="lead">${P.streak > 1 ? `That is ${P.streak} days in a row.` : 'Day one of your streak. Come back tomorrow to make it two.'}</p>
+    ${banner}
+    <div class="tiles">
+      <div class="tile"><b>${wpm}</b><span>WPM in the Mission Log</span></div>
+      <div class="tile"><b>${acc}%</b><span>accuracy in the Mission Log</span></div>
+      <div class="tile"><b>${gameScore}</b><span>${newBest ? 'new Meteor Storm best' : 'Meteor Storm score · best ' + P.bestMeteor}</span></div>
+      <div class="tile"><b>+${xp}</b><span>XP earned · ${allKeys} keys pressed</span></div>
+    </div>
+    ${weak.length ? `<div class="panel"><h2>Keys to watch</h2><div class="weaklist">${weak.map(x => `<span class="cap ${fingerClass(x.k)}">${esc(x.k.toUpperCase())}</span>`).join('')}</div><p style="color:var(--ink-dim);margin:0">These show up more in tomorrow's warm-up.</p></div>` : ''}
+    <div><button class="btn" data-act="home" type="button">Back to base</button></div>`;
+  stopClock(); S = null; clearTimeout(hintT);
+  show('summary');
+}
+
+/* ---------------- input ---------------- */
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const a = b.dataset.act; b.blur();
+  if (a === 'home') { show('home'); renderHome(); return; }
+  if (!S) return;
+  if (a === 'begin') beginStep(); else if (a === 'next') nextStep(); else if (a === 'resume') resume(); else if (a === 'leave') leaveSession();
+});
+$('#pauseBtn').addEventListener('click', e => { e.currentTarget.blur(); if (S && S.phase === 'run') pause(); else if (S && S.phase === 'paused') resume(); });
+document.addEventListener('keydown', e => {
+  if (!S) return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.target.closest && e.target.closest('input,textarea,select')) return;
+  const k = e.key;
+  if (e.getModifierState) $('#capsWarn').hidden = !e.getModifierState('CapsLock');
+  if (k === ' ' || k === "'" || k === '/' || k === '?' || k === 'Enter') e.preventDefault();
+  if (k === 'Escape') { if (S.phase === 'run') pause(); else if (S.phase === 'paused') resume(); return; }
+  if (e.repeat && S.phase !== 'run') return;
+  if (S.phase === 'intro') { if (k === ' ' || k === 'Enter') beginStep(); return; }
+  if (S.phase === 'result') { if (k === ' ' || k === 'Enter') nextStep(); return; }
+  if (S.phase === 'paused') { if (k.length === 1 || k === 'Enter') resume(); return; }
+  if (S.phase === 'run' && k.length === 1) {
+    S.lastKey = performance.now();
+    if (STEPS[S.step].id === 'game') gameKey(k); else typeKey(k);
+  }
+});
+document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
+
+if (P.startDate > today()) P.startDate = today();
+renderHome();
+})();
+</script>
+</body>
+</html>
